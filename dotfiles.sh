@@ -45,14 +45,14 @@ warn() {
 # Renames a sys file to our repo filename
 # Usage: sys2git [filename]
 sys2git() {
-	echo ${@##${DEST}} | sed 's/^./_/'
+	echo ${@##${DEST}} | sed 's/^\./_/'
 }
 
 # Renames a filename in our repo to a system file
 # Usage: git2sys [filename]
 git2sys() {
 	echo -n $DEST
-	echo "$@" | sed 's/^_/./'
+	echo "$@" | sed 's/^_/\./'
 }
 
 
@@ -99,8 +99,8 @@ installfile() {
 
 # Tracking functions
 untrack() {
-	local sysfile=$@
-	local file=$(sys2git "$sysfile")
+	local file=$@
+	local sysfile=$(git2sys "$file")
 
 	if ! [ -e "$file" ]; then
 		# warn "'$file' isn't being tracked."
@@ -113,8 +113,8 @@ untrack() {
 }
 
 track_file() {
-	local sysfile=$@
-	local file=$(sys2git "$sysfile")
+	local file=$@
+	local sysfile=$(git2sys "$file")
 
 	if ! (makedir $(dirname "$file") && installfile "$sysfile" "$file"); then
 		rm -f "$file"
@@ -127,8 +127,8 @@ track_file() {
 }
 
 track_dir() {
-	local sysdir=$@
-	local dir=$(sys2git "$sysdir")
+	local dir=$@
+	local sysdir=$(git2sys "$dir")
 	local watchfile="$dir/_WATCH"
 	
 	if ! [ -e "$sysdir" ]; then
@@ -154,19 +154,21 @@ track_dir() {
 }
 
 track() {
+	local file=$@
+	local sysfile=$(git2sys "$file")
 	local result=0
 
-	case $(stat -c '%F' "$@" 2> /dev/null) in
+	case $(stat -c '%F' "$sysfile" 2> /dev/null) in
 		'directory')
-			track_dir "$@"
+			track_dir "$file"
 			result=$?
 		;;
 		'regular file')
-			track_file "$@"
+			track_file "$file"
 			result=$?
 		;;
 		*)
-			error "'$@' is an unknown file type."
+			error "'$sysfile' is an unknown file type."
 			return 1 # Failure
 		;;
 	esac
@@ -198,7 +200,7 @@ pulldir() {
 	local sysdir=$(git2sys "$dir")
 	
 	if ! [ -d "$sysdir" ]; then
-		untrack "$sysdir"
+		untrack "$dir"
 		return 0
 	fi
 	   
@@ -216,9 +218,9 @@ pull2git() {
 				   if [ "$(basename $file)" = "_WATCH" ]; then
 					   pulldir "$(dirname $file)"
 				   elif ! [ -e "$sysfile" ]; then
-					   untrack "$sysfile"
+					   untrack "$file"
 				   elif ! diff -u "$sysfile" "$file" > /dev/null 2>&1; then
-					   track "$sysfile"
+					   track "$file"
 				   fi
 			   done
 }
@@ -236,11 +238,11 @@ push2sys() {
 }
 
 pulldiff() {
-	local sysfile=$@
-	local file=$(sys2git "$sysfile")
+	local file=$@
+	local sysfile=$(git2sys "$file")
 
-	if [ -n "$sysfile" ]; then
-		[ -f $sysfile ] && diff -u "$file" "$sysfile"
+	if [ -n "$file" ] && [ -f "$sysfile" ]; then
+		diff -u "$file" "$sysfile" || true
 		return 0
 	fi
 	   
@@ -269,18 +271,25 @@ case $1 in
 		pull2git
 		;;
 	diff)
-		pulldiff $2
+		if [ -z "$2" ]; then
+			pulldiff
+		else
+			shift
+			for f in $@; do
+				pulldiff $(sys2git "$f")
+			done
+		fi
 		;;
 	track)
 		shift
 		for f in $@; do
-			track "$f"
+			track $(sys2git "$f")
 		done
 		;;
 	untrack)
 		shift
 		for f in $@; do
-			untrack "$f"
+			untrack $(sys2git "$f")
 		done
 		;;
 	watching)
@@ -305,8 +314,8 @@ Actions:
   ls        List all dotfiles being tracked
   watching  List tracked directories
 
-  track   [filename|directory]   Track a dotfile or directory
-  untrack [filename|directory]   Untrack a file or directory
+  track   [filename|directory]   Track a dotfile or directory (relative to \$DEST)
+  untrack [filename|directory]   Untrack a file or directory (relative to \$DEST)
   diff    [filename]             Show changes in file
   git     [args for git]...      Use git
 EOF
