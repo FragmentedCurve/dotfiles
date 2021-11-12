@@ -16,7 +16,7 @@ repository.
 Fork or clone this repository.
 
     shell> cd ~/git/
-	shell> git clone https://github.com/FragmentedCurve/dotfiles.git
+    shell> git clone https://github.com/FragmentedCurve/dotfiles.git
 
 I recommend setting an alias for the `dotfiles.sh` script.
 
@@ -32,33 +32,33 @@ main (or master) branch for tracking dotfiles.
 Tracking a dotfile is as easy as doing,
 
     shell> dotfiles track .muttrc
-	::: COPY     _muttrc
+    ::: COPY     _muttrc
 
 The filename `.muttrc` is relative to `~/`. Filenames in the git repo
 have their "." replaced with an "_". You can list the files being
 tracked by doing,
 
     shell> dotfiles ls
-	_muttrc
+    _muttrc
 
 To watch for new files in a specific directory, you can track the
 directory,
 
     shell> dotfiles track ~/.mutt
-	::: MKDIR    _mutt
+    ::: MKDIR    _mutt
     ::: WATCH    _mutt
 
 Now when we do a **pull**, new files in ~/.mutt will be tracked
 automatically.
 
-   shell> touch ~/.mutt/foobar
-   shell> dotfiles pull
-   ::: COPY     _mutt/foobar
+    shell> touch ~/.mutt/foobar
+    shell> dotfiles pull
+    ::: COPY     _mutt/foobar
 
 We can see the directories we're watching by doing,
 
     shell> dotfiles watching
-	_mutt
+    _mutt
 
 ## Checking the Diffs
 
