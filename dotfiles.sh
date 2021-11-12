@@ -163,7 +163,7 @@ track() {
 			track_dir "$file"
 			result=$?
 		;;
-		'regular file')
+		'regular'*'file')
 			track_file "$file"
 			result=$?
 		;;
@@ -206,7 +206,7 @@ pulldir() {
 	   
 	IFS=$'\n'; for f in `ls "$sysdir"`; do
 				   if ! [ -e "$dir/$f" ]; then
-					   track "$sysdir/$f"
+					   track $(sys2git "$sysdir/$f")
 				   fi
 			   done
 }
