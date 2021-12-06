@@ -158,7 +158,16 @@ track() {
 	local sysfile=$(git2sys "$file")
 	local result=0
 
-	case $(stat -c '%F' "$sysfile" 2> /dev/null) in
+	case $(uname) in
+		'Darwin')
+			statflags=-f\ '%HT'
+		;;
+		*)
+			statflags=-c\ '%F'
+		;;
+	esac
+
+	case `stat $statflags "$sysfile" 2> /dev/null | tr [:upper:] [:lower:]` in
 		'directory')
 			track_dir "$file"
 			result=$?
